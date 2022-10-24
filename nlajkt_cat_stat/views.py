@@ -3,7 +3,7 @@ from mimetypes import suffix_map
 from django.http import HttpResponse
 from django.db.models import Count, Q, Max, Sum
 from django.template import loader
-from .models import Catalogues, Acquisition2, Book_source, Consignment
+from .models import Catalogues, Acquisition, Book_source, Consignment, Field_trip, Trip_place
 import datetime
 from django.shortcuts import render
 from django.views.generic import ListView
@@ -17,7 +17,8 @@ def home(request):
     return render(request, 'base.html')
 
 def cat_stat(request):
-    curcons = Catalogues.objects.aggregate(Max('consignment_no')).get('consignment_no__max')
+    curcons = Consignment.objects.filter(status = 'In process').only('consign_no')[0].consign_no
+#    Catalogues.objects.aggregate(Max('consignment_no')).get('consignment_no__max')
     bookcount = Catalogues.objects.all().count()
     catyear = Catalogues.objects.filter(entry_date__year=thisyear).count()
     catmonth = Catalogues.objects.filter(entry_date__month=thismonth).count()
@@ -225,15 +226,16 @@ def subject_chart(request):
     return render(request, 'chart_subject.html',{'labels' : labels,'data' : data,})
 
 def acq_stat(request):
-    acq = Acquisition2.objects.all()
-    cons = Consignment.objects.all()
-    curcons = Catalogues.objects.aggregate(Max('consignment_no')).get('consignment_no__max')
-    total_proc = Acquisition2.objects.aggregate(Sum('titles_proc')).get('titles_proc__sum')
-    total_expense = Acquisition2.objects.aggregate(Sum('value')).get('value__sum')
+    acq = Acquisition.objects.all()
+    cons = Consignment.objects.all().order_by('-consign_no')
+    ftrip = Field_trip.objects.all()
+    curcons = Consignment.objects.filter(status = 'In process').only('consign_no')[0].consign_no
+    total_proc = Acquisition.objects.aggregate(Sum('titles_proc')).get('titles_proc__sum')
+    total_expense = Acquisition.objects.aggregate(Sum('value')).get('value__sum')
     bookcount = Catalogues.objects.all().count()
     uncat = total_proc - bookcount
-    vendor_count = Acquisition2.objects.values('vendor__name').annotate(vendorcount=Sum('titles_proc'))
-    vendor_cat = Acquisition2.objects.values('vendor__category').annotate(vendorcount=Sum('titles_proc'))
+    vendor_count = Acquisition.objects.values('vendor__name').annotate(vendorcount=Sum('titles_proc'))
+    vendor_cat = Acquisition.objects.values('vendor__category').annotate(vendorcount=Sum('titles_proc'))
 
     context = {
         'acq' : acq,
@@ -244,7 +246,8 @@ def acq_stat(request):
         'vendor_cat' : vendor_cat,
         'total_expense' : total_expense,
         'cons' : cons,
-        'uncat' : uncat
+        'uncat' : uncat,
+        'ftrip' : ftrip
     }
     template = loader.get_template('acq_stat.html')
     return HttpResponse(template.render(context, request))

@@ -158,12 +158,16 @@ class Consignment(models.Model):
     consign_no = models.IntegerField()
     start_date = models.DateField()
     end_date = models.DateField(blank=True, null=True)
-    status = models.CharField(max_length=50, default='In process')
+    status = models.CharField(max_length=50, choices=[
+        ('Started','Started'),
+        ('In process','In process'),
+        ('Completed','Completed'),
+        ], default='In process')
     box_count = models.IntegerField(default=0)
     total_weight = models.IntegerField(default=0)
     shipment_date = models.DateField(blank=True, null=True)
 
-class Acquisition2(models.Model):
+class Acquisition(models.Model):
     entry_date = models.DateField()
     cons_no = models.IntegerField(default=461)
     titles_proc = models.IntegerField()
@@ -171,29 +175,30 @@ class Acquisition2(models.Model):
     value = models.IntegerField(default=0)
 
 class Trip_place(models.Model):
-    place_name = models.CharField(max_length=100)
-    place_category = models.CharField(max_length=100, choices=[
-        ('Government office','Government Office'),
-        ('NGO office','NGO Office'),
-        ('Book store','Book store'),
+    place_name = models.CharField(max_length = 100)
+    address = models.CharField(max_length = 200)
+    phone = models.CharField(max_length=50, blank=True, null=True)
+    contact_person = models.CharField(max_length=50, blank=True, null=True)
+    category = models.CharField(max_length=100, choices=[
+        ('Government office','Government office'),
+        ('NGO office','NGO office'),
         ('Book fair','Book fair'),
-        ('Personal','Personal')
-        ],)
-    address = models.CharField(max_length=200)
+        ('Book store','Book store'),
+        ('Personal','Personal'),
+        ('Others','Others')
+    ],)
 
-class FieldTrip(models.Model):
-    plan_date = models.DateField()
+    def __str__(self):
+        return self.place_name
+
+class Field_trip(models.Model):
+    planned_date = models.DateField()
     place = models.ForeignKey(Trip_place, on_delete=models.CASCADE)
     visit_date = models.DateField(blank=True, null=True)
-    titles_acq = models.IntegerField(default=0)
-    status = models.CharField(max_length=50, choices=[
+    titles_acquired = models.IntegerField(default=0)
+    status = models.CharField(max_length = 100, choices=[
         ('Scheduled','Scheduled'),
         ('Completed','Completed'),
         ('Postponed','Postponed'),
         ('Canceled','Canceled')
     ], default='Scheduled')
-
-
-
-
-
